@@ -32,14 +32,14 @@ bot.on('text', msg => {
   const chat = getChat(msg.chat.id)
   if (msg.text === '/start') {
     chat.start()
-    process.saveUser(msg.chat.id, msg.chat.first_name)
+    process.saveUserMongo(msg.chat.id, msg.from.first_name)
   } else if (msg.text === '/menu') {
     chat.menu()
   } else if (msg.text.startsWith('http')) {
-    process.getSub(msg.text, msg.chat.id).then((result) => {
-      const arg = result || msg.text
-      chat.scanUrl(arg)
-    })
+    const userSub = process.getSub(msg.text, msg.chat.id)
+    const arg = userSub || msg.text
+    const unsuppUrl = chat.scanUrl(arg)
+    if (unsuppUrl) process.saveUnsuppUrl(unsuppUrl)
   } else if (chat.pendingRequest) {
     const newSubscribe = chat.setTitle(msg.text)
     process.saveSub(newSubscribe)
@@ -52,9 +52,8 @@ bot.on('callback_query', query => {
   if (query.data === 'newsubs') {
     chat.newsubs()
   } else if (query.data === 'mysubs') {
-    process.getUserSubs(query.message.chat.id).then((subscribes) => {
-      chat.mysubs(subscribes)
-    })
+    const subscribes = process.getUserSubs(query.message.chat.id)
+    chat.mysubs(subscribes)
   } else if (query.data === 'delsub') {
     const url = query.message.entities[0].url
     const chatId = query.message.chat.id

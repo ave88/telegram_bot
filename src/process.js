@@ -2,6 +2,7 @@ const Mongo = require('./mongo.js')
 const puppeteer = require('puppeteer')
 const Site = require('./site.js')
 const messages = require('../configs/messages.js')
+const delay = require('delay')
 
 module.exports = class Process extends Mongo {
   constructor (bot) {
@@ -14,21 +15,56 @@ module.exports = class Process extends Mongo {
       headless: true
     })
     const page = await browser.newPage()
-    await page.setJavaScriptEnabled(false)
+    // await page.setJavaScriptEnabled(false)
     this.page = page
   }
   async startServices () {
     await this.startPuppeteer()
     await this.startMongo()
-    this.subscribes = await this.getSubs()
+    this.subscribes = await this.getSubsMongo()
   }
-  wait (time) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve()
-      }, time)
+  getUserSubs (chatId) {
+    let userSubs = []
+    this.subscribes.forEach(subscribe => {
+      if (subscribe['chatId'] === chatId) {
+        userSubs.push(subscribe)
+      }
     })
+    return userSubs
   }
+  getSub (url, chatId) {
+    let userSub
+    this.subscribes.forEach(subscribe => {
+      if (subscribe.url === url && subscribe.chatId === chatId) {
+        userSub = subscribe
+      }
+    })
+    return userSub
+  }
+  saveData (data, url, chatId) {
+    data = data.map((item) => {
+      return item.link
+    })
+    this.subscribes.forEach(subscribe => {
+      if (subscribe.url === url && subscribe.chatId === chatId) {
+        (subscribe.advData) ? subscribe.advData.push(...data) : subscribe.advData = data
+      }
+    })
+    this.saveDataMongo(data, url, chatId)
+  }
+  saveSub (newSubscribe) {
+    this.subscribes.push(newSubscribe)
+    this.saveSubMongo(newSubscribe)
+  }
+  deleteSub (url, chatId) {
+    this.subscribes.forEach((subscribe, i) => {
+      if (subscribe.url === url && subscribe.chatId === chatId) {
+        delete this.subscribes[i]
+      }
+    })
+    this.deleteSubMongo(url, chatId)
+  }
+
   async messageSender () {
     while (true) {
       console.log('m:' + this.messages.length)
@@ -44,17 +80,16 @@ module.exports = class Process extends Mongo {
             this.bot.sendMessage(msg.chatId, message, {parse_mode: 'HTML'})
           }
         })
-        await this.wait(2000)
+        await delay(2000)
       } else {
-        await this.wait(5000)
+        await delay(5000)
       }
     }
   }
-
   async start () {
     while (true) {
       if (this.subscribes.length === 0) {
-        await this.wait(10000)
+        await delay(10000)
       }
       for (let subscribe of this.subscribes) {
         let {
@@ -69,14 +104,14 @@ module.exports = class Process extends Mongo {
         console.log('sub msg length:' + subMessages.length)
         if (subMessages.length > 30) {
           subMessages = [{chatId, message: messages.manyResults(url, title)}]
-          await this.deleteSub(url, chatId)
+          this.deleteSub(url, chatId)
         }
         if (subMessages.length > 0 || advData === undefined) {
-          await this.saveData(site.data, url, chatId)
+          this.saveData(site.data, url, chatId)
         }
         this.messages.push(...subMessages)
       }
-      await this.wait(10000)
+      await delay(20000)
     }
   }
 }

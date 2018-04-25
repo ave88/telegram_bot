@@ -34,7 +34,7 @@ module.exports = class Chat {
         this.sendMessage(messages.prettyLink(subscribe.url, subscribe.title), messageoptions.delsub)
       })
     } else {
-      this.sendMessage(messages.nosubs, messageoptions.newsubs)
+      this.sendMessage(messages.nosubs, messageoptions.nosubs)
     }
   }
   delsub (query) {
@@ -67,7 +67,8 @@ module.exports = class Chat {
       }
 
       if (!type) {
-        throw new Error('wrong url')
+        this.sendMessage(messages.notSupported)
+        return url
       }
       this.pendingRequest = {
         url,

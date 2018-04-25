@@ -5,6 +5,7 @@ const dbUrl = config.dbUrl
 const dbName = config.dbName
 const dbCollectionSubs = config.dbCollectionSubs
 const dbCollectionUsers = config.dbCollectionUsers
+const dbCollectionUnsuppLinks = config.dbCollectionUnsuppLinks
 
 module.exports = class Mongo {
   async startMongo () {
@@ -12,35 +13,19 @@ module.exports = class Mongo {
       const client = await mongoClient.connect(dbUrl)
       this.subsCollection = client.db(dbName).collection(dbCollectionSubs)
       this.userCollection = client.db(dbName).collection(dbCollectionUsers)
+      this.unsupplinksCollection = client.db(dbName).collection(dbCollectionUnsuppLinks)
     } catch (e) {
       console.log(`Start mongo err: ${e}`)
     }
   }
-  getSubs () {
+  getSubsMongo () {
     try {
       return this.subsCollection.find({}).sort({advData: 1}).toArray()
     } catch (e) {
       console.log(`get Subs from mongo err: ${e}`)
     }
   }
-  getUserSubs (chatId) {
-    try {
-      return this.subsCollection.find({chatId}).toArray()
-    } catch (e) {
-      console.log(`getUserSubs err: ${e}`)
-    }
-  }
-  getSub (url, chatId) {
-    try {
-      return this.subsCollection.findOne({chatId, url})
-    } catch (e) {
-      console.log(`getSub err: ${e}`)
-    }
-  }
-  saveData (data, url, chatId) {
-    data = data.map((item) => {
-      return item.link
-    })
+  saveDataMongo (data, url, chatId) {
     console.log(`data length in savedata: ${data.length}`)
     try {
       this.subsCollection.updateOne({
@@ -51,7 +36,7 @@ module.exports = class Mongo {
       console.log(`saveData err:${e}`)
     }
   }
-  saveUser (chatId, name) {
+  saveUserMongo (chatId, name) {
     try {
       const newUser = {
         _id: chatId,
@@ -62,7 +47,7 @@ module.exports = class Mongo {
       console.log(`saveUser err: ${e}`)
     }
   }
-  saveSub (newSubscribe) {
+  saveSubMongo (newSubscribe) {
     try {
       console.log(`NEW SUBSCRIBE: \n${JSON.stringify(newSubscribe, null, 2)}`)
       this.subsCollection.insertOne(newSubscribe)
@@ -70,7 +55,7 @@ module.exports = class Mongo {
       console.log(`saveSab err: ${e}`)
     }
   }
-  deleteSub (url, chatId) {
+  deleteSubMongo (url, chatId) {
     try {
       this.subsCollection.deleteOne({
         'chatId': chatId,
@@ -78,6 +63,13 @@ module.exports = class Mongo {
       })
     } catch (e) {
       console.log(`deleteSub err: ${e}`)
+    }
+  }
+  saveUnsuppUrl (url) {
+    try {
+      this.unsupplinksCollection.insertOne({ url })
+    } catch (e) {
+      console.log(`save unsuppUrl err: ${e}`)
     }
   }
 }

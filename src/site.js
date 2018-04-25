@@ -71,7 +71,8 @@ module.exports = class Site {
     let message = []
     if (this.dbData) {
       let dbData = new Set(this.dbData)
-      this.data = this.data.map((item) => {
+      let newData = []
+      this.data.forEach((item) => {
         if (!dbData.has(item.link)) {
           message.push({
             chatId: this.chatId,
@@ -79,9 +80,10 @@ module.exports = class Site {
             title: item.title.replace(/\n\t/g, ''),
             url: this.url
           })
-          return item
+          newData.push(item)
         }
       })
+      this.data = newData
     }
     return message
   }

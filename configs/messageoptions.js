@@ -46,5 +46,15 @@ module.exports = {
   },
   dwpp: {
     disable_web_page_preview: true
+  },
+  nosubs: {
+    reply_markup: {
+      inline_keyboard: [
+        [{
+          text: 'Новая подписка',
+          callback_data: 'newsubs'
+        }]
+      ]
+    }
   }
 }

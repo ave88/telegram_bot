@@ -9,6 +9,7 @@
   "author": "Artem Konovalov",
   "license": "ISC",
   "dependencies": {
+    "delay": "^2.0.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "mongodb": "^3.0.5",
     "node-telegram-bot-api": "^0.30.0",

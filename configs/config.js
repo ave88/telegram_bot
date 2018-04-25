@@ -3,5 +3,6 @@ module.exports = {
   dbName: 'telegramUsers',
   dbCollectionSubs: 'subscribes',
   dbCollectionUsers: 'users',
+  dbCollectionUnsuppLinks: 'unsupplinks',
   token: 'BOT_TOKEN'
 }
