@@ -43,5 +43,8 @@ module.exports = {
     disable_web_page_preview: true,
     parse_mode: 'HTML',
     disable_notification: true
+  },
+  dwpp: {
+    disable_web_page_preview: true
   }
 }

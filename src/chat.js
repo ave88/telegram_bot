@@ -1,6 +1,5 @@
-const messages = require('../configs/messages')
-const Process = require('./process')
-const messageoptions = require('../configs/messageoptions')
+const messages = require('../configs/messages.js')
+const messageoptions = require('../configs/messageoptions.js')
 
 module.exports = class Chat {
   constructor (id, bot) {
@@ -9,7 +8,7 @@ module.exports = class Chat {
   }
 
   sendMessage (msg, opt) {
-    console.log(msg)
+    console.log(`--->${this.id}---${msg}`)
     this.bot.sendMessage(this.id, msg, opt)
   }
   deleteMessage (msgId) {
@@ -29,17 +28,13 @@ module.exports = class Chat {
   newsubs () {
     this.sendMessage(messages.newsubs, messageoptions.newsubs)
   }
-  mysubs (processes) {
-    let noSubs = true
-    for (let key in processes) {
-      if (key.startsWith(this.id)) {
-        const message = `<a href="${processes[key].url}">${processes[key].title}</a>`
-        this.sendMessage(message, messageoptions.delsub)
-        noSubs = false
-      }
-    }
-    if (noSubs) {
-      this.sendMessage(messages.nosubs, messageoptions.menu)
+  mysubs (subscribes) {
+    if (subscribes.length > 0) {
+      subscribes.forEach((subscribe) => {
+        this.sendMessage(messages.prettyLink(subscribe.url, subscribe.title), messageoptions.delsub)
+      })
+    } else {
+      this.sendMessage(messages.nosubs, messageoptions.newsubs)
     }
   }
   delsub (query) {
@@ -48,37 +43,38 @@ module.exports = class Chat {
   }
 
   scanUrl (url) {
-    let type
-    if (url.indexOf('https://auto.ria.com/') !== -1) {
-      if (url.indexOf('https://auto.ria.com/search/') !== -1) {
-        type = 'ria'
-      } else {
-        this.sendMessage(messages.wrongUrlRia, {
-          disable_web_page_preview: true
-        })
+    if (typeof url === 'object') {
+      const message = messages.alreadySubs + messages.prettyLink(url.url, url.title)
+      this.sendMessage(message, messageoptions.delsub)
+    } else {
+      let type
+      if (url.indexOf('https://auto.ria.com/') !== -1) {
+        if (url.indexOf('https://auto.ria.com/search/') !== -1) {
+          type = 'ria'
+        } else {
+          this.sendMessage(messages.wrongUrl.ria, messageoptions.dwpp)
+        }
       }
-    }
-    if (url.startsWith('https://www.olx.ua/')) {
-      type = 'olx'
-    }
-    if (url.indexOf('https://rabota.ua/') !== -1) {
-      if (url.indexOf('https://rabota.ua/jobsearch/vacancy_list') !== -1) {
-        type = 'rabota'
-      } else {
-        this.sendMessage(messages.wrongUrlRabota, {
-          disable_web_page_preview: true
-        })
+      if (url.startsWith('https://www.olx.ua/')) {
+        type = 'olx'
       }
-    }
+      if (url.indexOf('https://rabota.ua/') !== -1) {
+        if (url.indexOf('https://rabota.ua/jobsearch/vacancy_list') !== -1) {
+          type = 'rabota'
+        } else {
+          this.sendMessage(messages.wrongUrl.rabota, messageoptions.dwpp)
+        }
+      }
 
-    if (!type) {
-      throw new Error('wrong url')
+      if (!type) {
+        throw new Error('wrong url')
+      }
+      this.pendingRequest = {
+        url,
+        type
+      }
+      this.sendMessage(messages.titleQuestion + `"${messages.titleExample[type]}"`)
     }
-    this.pendingRequest = {
-      url,
-      type
-    }
-    this.sendMessage(messages.titleQuestion + `"${this.getExample(type)}"`)
   }
   setTitle (title) {
     let {
@@ -86,20 +82,13 @@ module.exports = class Chat {
       type
     } = this.pendingRequest
     this.sendMessage(messages.titleAnswer)
-    const process = new Process(url, this.id, title, type, this.bot)
-    process.saveToMongo()
-    process.start()
-    return process
-  }
-
-  getExample (type) {
-    switch (type) {
-      case 'ria':
-        return messages.titleExampleRia
-      case 'olx':
-        return messages.titleExampleOlx
-      case 'rabota':
-        return messages.titleExampleRabota
+    const newSubscribe =
+    {
+      chatId: this.id,
+      type,
+      title,
+      url
     }
+    return newSubscribe
   }
 }
